@@ -45,7 +45,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	# Create learninglocker user
 	echo "==> Creating user $LEARNINGLOCKER_DB_USER@$LEARNINGLOCKER_DB_PASSWORD on $LEARNINGLOCKER_DB_HOST/$LEARNINGLOCKER_DB_NAME"
 	cat > /tmp/createUser.js <<-EOF
-		use learninglocker;
+		use $LEARNINGLOCKER_DB_NAME;
 		db.createUser({ user: '$LEARNINGLOCKER_DB_USER', pwd: '$LEARNINGLOCKER_DB_PASSWORD', roles:[{ role: 'readWrite', db: '$LEARNINGLOCKER_DB_NAME' }] });
 	EOF
 	mongo \
