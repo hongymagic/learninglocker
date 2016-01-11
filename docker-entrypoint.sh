@@ -2,10 +2,6 @@
 
 set -e
 
-echo 'Sleeping for 15 seconds while wating for mongodb to come alive'
-sleep 15;
-echo 'Awake now!'
-
 if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if [ -n "$MONGO_PORT_27017_TCP" ]; then
 		if [ -z "$LEARNINGLOCKER_DB_HOST" ]; then
@@ -24,13 +20,19 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		exit 1
 	fi
 
+	: ${MONGO_WAIT_TIMEOUT:=${MONGO_WAIT_TIMEOUT:-15}}
+	echo -n "Sleeping for $MONGO_WAIT_TIMEOUT seconds while wating for mongodb to come alive..."
+	sleep $MONGO_WAIT_TIMEOUT;
+	echo 'Done, and awake now.'
+
+	# Set admin user and password
+	: ${MONGO_ADMIN_USER:=admin}
+	: ${MONGO_ADMIN_PASSWORD:=password}
+
 	# If we're linked to MongoDB and thus have credentials already, let's use them
-	: ${LEARNINGLOCKER_DB_USER:=${MONGO_ENV_MONGO_USER:-learninglocker}}
-	if [ "$LEARNINGLOCKER_DB_USER" = 'root' ]; then
-		: ${LEARNINGLOCKER_DB_PASSWORD:=$MONGO_ENV_MONGO_ROOT_PASSWORD}
-	fi
-	: ${LEARNINGLOCKER_DB_PASSWORD:=$MONGO_ENV_MONGO_PASSWORD}
-	: ${LEARNINGLOCKER_DB_NAME:=${MONGO_ENV_MONGO_DATABASE:-learninglocker}}
+	: ${LEARNINGLOCKER_DB_USER:=learninglocker}
+	: ${LEARNINGLOCKER_DB_PASSWORD:-learninglocker}
+	: ${LEARNINGLOCKER_DB_NAME:=learninglocker}
 
 	if [ -z "$LEARNINGLOCKER_DB_PASSWORD" ]; then
 		echo >&2 'error: missing required LEARNINGLOCKER_DB_PASSWORD environment variable'
@@ -39,6 +41,18 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		echo >&2 '  (Also of interest might be LEARNINGLOCKER_DB_USER and LEARNINGLOCKER_DB_NAME.)'
 		exit 1
 	fi
+
+	# Create learninglocker user
+	echo "==> Creating user $LEARNINGLOCKER_DB_USER@$LEARNINGLOCKER_DB_PASSWORD on $LEARNINGLOCKER_DB_HOST/$LEARNINGLOCKER_DB_NAME"
+	cat > /tmp/createUser.js <<-EOF
+		use learninglocker;
+		db.createUser({ user: '$LEARNINGLOCKER_DB_USER', pwd: '$LEARNINGLOCKER_DB_PASSWORD', roles:[{ role: 'readWrite', db: '$LEARNINGLOCKER_DB_NAME' }] });
+	EOF
+	mongo \
+		--username "$MONGO_ADMIN_USER" \
+		--password "$MONGO_ADMIN_PASSWORD" \
+		"${LEARNINGLOCKER_DB_HOST}/admin" < /tmp/createUser.js
+	rm /tmp/createUser.js
 
 	# Setup database connection to mongodb
 	if [ ! -e app/config/local/database.php ]; then

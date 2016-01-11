@@ -4,6 +4,10 @@ MAINTAINER David Hong <david.hong@peopleplan.com.au>
 # Enable Apache rewrite and expires mods
 RUN a2enmod rewrite expires
 
+# Required for mongoDB
+RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv '7F0CEB10' && \
+	echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
+
 # Update and install system/php packages
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninterative apt-get install -yq \
@@ -13,8 +17,14 @@ RUN DEBIAN_FRONTEND=noninterative apt-get install -yq \
 		libssl-dev \
 		libpng12-dev \
 		zlib1g-dev \
-		libjpeg-dev && \
-	rm -rf /var/lib/apt/lists/*
+		libjpeg-dev
+
+# Install mongo client
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -yq mongodb-org-shell
+RUN echo "mongodb-org-shell hold" | dpkg --set-selections
+
+# Clear apt-get cache
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install the PHP extensions we need
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
