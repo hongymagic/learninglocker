@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if [ -n "$MONGO_PORT_27017_TCP" ]; then
