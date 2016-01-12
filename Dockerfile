@@ -1,8 +1,10 @@
 FROM php:5.6-apache
 MAINTAINER David Hong <david.hong@peopleplan.com.au>
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Enable Apache rewrite and expires mods
-RUN a2enmod rewrite expires
+RUN a2enmod rewrite expires ssl
 
 # Required for mongoDB
 RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv '7F0CEB10' && \
@@ -10,17 +12,19 @@ RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv '7F0CEB10' && \
 
 # Update and install system/php packages
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninterative apt-get install -yq \
-		curl \
-		git \
-		libmcrypt-dev \
-		libssl-dev \
-		libpng12-dev \
-		zlib1g-dev \
-		libjpeg-dev
+RUN apt-get install -yq \
+	vim \
+	curl \
+	git \
+	openssl \
+	libmcrypt-dev \
+	libssl-dev \
+	libpng12-dev \
+	zlib1g-dev \
+	libjpeg-dev
 
 # Install mongo client
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -yq mongodb-org-shell
+RUN apt-get install -yq mongodb-org-shell
 RUN echo "mongodb-org-shell hold" | dpkg --set-selections
 
 # Clear apt-get cache
@@ -40,14 +44,13 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set recommended PHP.ini settings
 # See https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
-		echo 'opcache.memory_consumption=128'; \
-		echo 'opcache.interned_strings_buffer=8'; \
-		echo 'opcache.max_accelerated_files=4000'; \
-		echo 'opcache.revalidate_freq=60'; \
-		echo 'opcache.fast_shutdown=1'; \
-		echo 'opcache.enable_cli=1'; \
-	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
+	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.max_accelerated_files=4000'; \
+	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.fast_shutdown=1'; \
+	echo 'opcache.enable_cli=1'; \
+} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Download and install Learning Locker
 # Upstream tarballs include ./learninglocker-v1.11.0/ so this gives us /var/www/html
@@ -58,12 +61,14 @@ RUN curl -o learninglocker.tar.gz -SL https://github.com/LearningLocker/learning
 	&& chown -R www-data:www-data /var/www/html
 RUN composer install
 
-# Setup apache to point to public/ under learning locker dir
-RUN sed -i "s/^DocumentRoot.*/DocumentRoot \'\/var\/www\/html\/public\/\'/g" /etc/apache2/apache2.conf
+# Setup apache and SSL
+COPY ssl.conf /etc/apache2/mods-available/ssl.conf
+COPY apache2.conf /etc/apache2/apache2.conf
 
 COPY docker-entrypoint.sh /entrypoint.sh
 
+EXPOSE 443
+
 # grr, ENTRYPOINT resets CMD now
-EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["apache2-foreground"]
