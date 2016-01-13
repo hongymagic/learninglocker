@@ -10,18 +10,24 @@ RUN a2enmod rewrite expires ssl
 RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv '7F0CEB10' && \
 	echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
 
-# Update and install system/php packages
+# Update and install system/php/python/aws packages (see README.md for more)
 RUN apt-get update
 RUN apt-get install -yq \
-	vim \
 	curl \
 	git \
+        groff \
+        python \
+        python-pip \
+        jq \
 	openssl \
 	libmcrypt-dev \
 	libssl-dev \
 	libpng12-dev \
 	zlib1g-dev \
 	libjpeg-dev
+
+# Install AWS cli/s3cmd
+RUN pip install awscli s3cmd
 
 # Install mongo client
 RUN apt-get install -yq mongodb-org-shell
