@@ -47,7 +47,7 @@ As such, link to a running mongoDB container is required.
 - `MONGO_WAIT_TIMEOUT`: (_optional_) Time to wait before mongo container becomes live. Defaults to 10 seconds
 - `AWS_S3_BUCKET_PATH`: (_optional_) AWS S3 Bucket path to download certificates from. The path should be of the form `s3://my-bucket/www.example.com/certs/*`. And below two keys are also required. If missing, will generate a self-signed certificate
 	- `AWS_S3_ACCESS_KEY_ID`
-	- `AWS_S3_ACCESS_SECRET_KEY`
+	- `AWS_S3_SECRET_ACCESS_KEY`
 
 #### Example docker-compose.yml
 

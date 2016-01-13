@@ -59,11 +59,12 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			-keyout "/var/www/certs/$APP_URL.key" \
 			-out "/var/www/certs/$APP_URL.crt"
 	else
+		echo "==> AWS S3 Bucket found. Downloading SSL certificate from AWS S3 bucket: $AWS_S3_BUCKET_PATH"
 		mkdir -p $HOME/.aws
 		cat > "$HOME/.aws/config" <<-EOF
 			[default]
 			aws_access_key_id = $AWS_S3_ACCESS_KEY_ID
-			aws_secret_access_key = $AWS_S3_ACCESS_SECRET_KEY
+			aws_secret_access_key = $AWS_S3_SECRET_ACCESS_KEY
 			region = ap-southeast-2
 		EOF
 
