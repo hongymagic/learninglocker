@@ -45,40 +45,37 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	# Check if FQDN/HOSTNAME is set
 	: ${APP_URL:=${TUTUM_SERVICE_FQDN:=$HOSTNAME}}
 	if [ -z "$APP_URL" ]; then
-                echo >&2 'error: missing required APP_URL/TUTUM_SERVICE_FQDN/HOSTNAME environment variable'
+			echo >&2 'error: missing required APP_URL/TUTUM_SERVICE_FQDN/HOSTNAME environment variable'
 		exit 1
 	fi
 
 	# Create SSL certificate files, generate self-signed cert if necessary
 	mkdir -p /var/www/certs
-        if [ -z "$AWS_S3_BUCKET_PATH" ]; then
-                echo '==> AWS S3 Bucket not found. Generating self-signed SSL certificates.'
+	if [ -z "$AWS_S3_BUCKET_PATH" ]; then
+		echo '==> AWS S3 Bucket not found. Generating self-signed SSL certificates.'
 		openssl \
 			req -new -newkey rsa:4096 -days 365 -nodes -x509 \
 			-subj "/C=AU/ST=NSW/L=Sydney/O=Peopleplan Pty Ltd/CN=$APP_URL" \
 			-keyout "/var/www/certs/$APP_URL.key" \
-                        -out "/var/www/certs/$APP_URL.crt"
+			-out "/var/www/certs/$APP_URL.crt"
 	else
-                mkdir -p $HOME/.aws
-                cat > "$HOME/.aws/config" <<-EOF
-                        [default]
-                        aws_access_key_id = $AWS_S3_ACCESS_KEY_ID
-                        aws_secret_access_key = $AWS_S3_ACCESS_SECRET_KEY
-                        region = ap-southeast-2
-                EOF
+		mkdir -p $HOME/.aws
+		cat > "$HOME/.aws/config" <<-EOF
+			[default]
+			aws_access_key_id = $AWS_S3_ACCESS_KEY_ID
+			aws_secret_access_key = $AWS_S3_ACCESS_SECRET_KEY
+			region = ap-southeast-2
+		EOF
 
-                aws s3 sync "$AWS_S3_BUCKET_PATH" /var/www/certs/
-                for cert in /var/www/certs/*; do
-                        mv "$cert" "/var/www/certs/$APP_URL.${cert##*.}"
-                done
+		aws s3 sync "$AWS_S3_BUCKET_PATH" /var/www/certs/
+		for cert in /var/www/certs/*; do
+			mv "$cert" "/var/www/certs/$APP_URL.${cert##*.}"
+		done
 	fi
 	echo "SSLCertificateKeyFile /var/www/certs/$APP_URL.key" >> /etc/apache2/apache2.conf
-        echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
-        if [ -e "/var/www/certs/$APP_URL.ca-bundle" ]; then
-                echo "SSLCertificateChainFile /var/www/certs/$APP_URL.ca-bundle" >> /etc/apache2/apache2.conf
-        fi
-        chmod 700 /var/www/certs
-        chmod 600 /var/www/certs/*
+	echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
+	chmod 700 /var/www/certs
+	chmod 600 /var/www/certs/*
 
 	# Create learninglocker user
 	echo "==> Creating user $LEARNINGLOCKER_DB_USER@$LEARNINGLOCKER_DB_PASSWORD on $LEARNINGLOCKER_DB_HOST/$LEARNINGLOCKER_DB_NAME"
