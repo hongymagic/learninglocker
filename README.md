@@ -5,6 +5,8 @@ As such, link to a running mongoDB container is required.
 
 #### Example usage
 
+For more detailed example, check out `learninglocker.yml` docker-compose file.
+
 1. Create a mongoDB instance (example using docker container). [`tutum/mongodb`](https://hub.docker.com/r/tutum/mongodb/) has better custom `ENV` support so use it instead of official mongoDB container:
 
 	```
