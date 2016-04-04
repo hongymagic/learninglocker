@@ -6,28 +6,22 @@ web:
   hostname: lrs.docker.dev
   environment:
     APP_URL: 'lrs.docker.dev'
-    MONGO_ADMIN_USER: 'admin'
-    MONGO_ADMIN_PASSWORD: 'password'
-    LEARNINGLOCKER_DB_NAME: 'learninglocker'
-    LEARNINGLOCKER_DB_USER: 'learninglocker'
-    LEARNINGLOCKER_DB_PASSWORD: 'learninglocker'
     APP_SECRET_KEY: 'CHANGEME12345678'
     SMTP_SERVER: 'smtp.sendgrid.net'
     SMTP_PORT: 587
-    SMTP_USER: ''
-    SMTP_PASSWORD: ''
+    SMTP_USER: 'your own'
+    SMTP_PASSWORD: 'your own'
     EMAIL_FROM_NAME: 'Learning Locker LRS Docker Container'
     EMAIL_FROM_ADDRESS: 'lrs@lrs.docker.dev'
-    AWS_S3_BUCKET_PATH: ''
-    AWS_S3_ACCESS_KEY_ID: ''
-    AWS_S3_ACCESS_SECRET_KEY: ''
   ports:
     - "443:443"
 db:
   container_name: learninglocker-db
-  build: mongodb/2.6
+  image: tutum/mongodb:3.2
   environment:
-    MONGODB_PASS: 'password'
+    MONGODB_DATABASE: 'learninglocker'
+    MONGODB_USER: 'learninglocker'
+    MONGODB_PASS: 'learninglocker'
   ports:
     - "27017:27017"
     - "28017:28017"

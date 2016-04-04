@@ -20,32 +20,10 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		exit 1
 	fi
 
-	: ${MONGO_WAIT_TIMEOUT:=${MONGO_WAIT_TIMEOUT:-10}}
-	echo -n "Sleeping for $MONGO_WAIT_TIMEOUT seconds while wating for mongodb to come alive..."
-	sleep $MONGO_WAIT_TIMEOUT;
-	echo 'Done, and awake now.'
-
-	# Set admin user and password
-	: ${MONGO_ADMIN_USER:=admin}
-	: ${MONGO_ADMIN_PASSWORD:=password}
-
-	# If we're linked to MongoDB and thus have credentials already, let's use them
-	: ${LEARNINGLOCKER_DB_USER:=learninglocker}
-	: ${LEARNINGLOCKER_DB_PASSWORD:-learninglocker}
-	: ${LEARNINGLOCKER_DB_NAME:=learninglocker}
-
-	if [ -z "$LEARNINGLOCKER_DB_PASSWORD" ]; then
-		echo >&2 'error: missing required LEARNINGLOCKER_DB_PASSWORD environment variable'
-		echo >&2 '  Did you forget to -e LEARNINGLOCKER_DB_PASSWORD=... ?'
-		echo >&2
-		echo >&2 '  (Also of interest might be LEARNINGLOCKER_DB_USER and LEARNINGLOCKER_DB_NAME.)'
-		exit 1
-	fi
-
 	# Check if FQDN/HOSTNAME is set
-	: ${APP_URL:=${TUTUM_SERVICE_FQDN:=$HOSTNAME}}
+	: ${APP_URL:=${DOCKERCLOUD_SERVICE_FQDN:=$HOSTNAME}}
 	if [ -z "$APP_URL" ]; then
-			echo >&2 'error: missing required APP_URL/TUTUM_SERVICE_FQDN/HOSTNAME environment variable'
+			echo >&2 'error: missing required APP_URL/DOCKERCLOUD_SERVICE_FQDN/HOSTNAME environment variable'
 		exit 1
 	fi
 
@@ -78,17 +56,24 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	chmod 700 /var/www/certs
 	chmod 600 /var/www/certs/*
 
-	# Create learninglocker user
-	echo "==> Creating user $LEARNINGLOCKER_DB_USER@$LEARNINGLOCKER_DB_PASSWORD on $LEARNINGLOCKER_DB_HOST/$LEARNINGLOCKER_DB_NAME"
-	cat > /tmp/createUser.js <<-EOF
-		use $LEARNINGLOCKER_DB_NAME;
-		db.createUser({ user: '$LEARNINGLOCKER_DB_USER', pwd: '$LEARNINGLOCKER_DB_PASSWORD', roles:[{ role: 'readWrite', db: '$LEARNINGLOCKER_DB_NAME' }] });
-	EOF
-	mongo \
-		--username "$MONGO_ADMIN_USER" \
-		--password "$MONGO_ADMIN_PASSWORD" \
-		"${LEARNINGLOCKER_DB_HOST}/admin" < /tmp/createUser.js
-	rm /tmp/createUser.js
+	# Give MONGO some time to boot up
+	: ${MONGO_WAIT_TIMEOUT:=${MONGO_WAIT_TIMEOUT:-10}}
+	echo -n "Sleeping for $MONGO_WAIT_TIMEOUT seconds while wating for mongodb to come alive..."
+	sleep $MONGO_WAIT_TIMEOUT;
+	echo 'Done, and awake now.'
+
+	# If we're linked to MongoDB and thus have credentials already, let's use them
+	LEARNINGLOCKER_DB_USER="${MONGO_ENV_MONGODB_USER:=learninglocker}"
+	LEARNINGLOCKER_DB_PASSWORD="${MONGO_ENV_MONGODB_PASS:=learninglocker}"
+	LEARNINGLOCKER_DB_NAME="${MONGO_ENV_MONGODB_DATABASE:=learninglocker}"
+
+	if [ -z "$LEARNINGLOCKER_DB_PASSWORD" ]; then
+		echo >&2 'error: missing required LEARNINGLOCKER_DB_PASSWORD environment variable'
+		echo >&2 '  Did you forget to -e LEARNINGLOCKER_DB_PASSWORD=... ?'
+		echo >&2
+		echo >&2 '  (Also of interest might be LEARNINGLOCKER_DB_USER and LEARNINGLOCKER_DB_NAME.)'
+		exit 1
+	fi
 
 	# Setup database connection to mongodb
 	if [ ! -e app/config/local/database.php ]; then
