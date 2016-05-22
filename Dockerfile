@@ -4,7 +4,7 @@ MAINTAINER David Hong <david.hong@peopleplan.com.au>
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Enable Apache rewrite and expires mods
-RUN a2enmod rewrite expires ssl
+RUN a2enmod rewrite expires
 
 # Required for mongoDB
 RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv '7F0CEB10' && \
@@ -25,9 +25,6 @@ RUN apt-get install -yq \
 	libpng12-dev \
 	zlib1g-dev \
 	libjpeg-dev
-
-# Install AWS cli/s3cmd
-RUN pip install awscli s3cmd
 
 # Install mongo client
 RUN apt-get install -yq mongodb-org-shell
@@ -68,12 +65,11 @@ RUN curl -o learninglocker.tar.gz -SL https://github.com/LearningLocker/learning
 RUN composer install
 
 # Setup apache and SSL
-COPY ssl.conf /etc/apache2/mods-available/ssl.conf
 COPY apache2.conf /etc/apache2/apache2.conf
 
 COPY docker-entrypoint.sh /entrypoint.sh
 
-EXPOSE 443
+EXPOSE 80
 
 # grr, ENTRYPOINT resets CMD now
 ENTRYPOINT ["/entrypoint.sh"]

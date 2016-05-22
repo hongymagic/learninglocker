@@ -3,18 +3,17 @@ web:
   build: .
   links:
     - db:mongo
-  hostname: lrs.docker.dev
   environment:
-    APP_URL: 'lrs.docker.dev'
+    APP_URL: 'lrs.localhost'
     APP_SECRET_KEY: 'CHANGEME12345678'
     SMTP_SERVER: 'smtp.sendgrid.net'
     SMTP_PORT: 587
     SMTP_USER: 'your own'
     SMTP_PASSWORD: 'your own'
     EMAIL_FROM_NAME: 'Learning Locker LRS Docker Container'
-    EMAIL_FROM_ADDRESS: 'lrs@lrs.docker.dev'
+    EMAIL_FROM_ADDRESS: 'learninglocker@lrs.localhost'
   ports:
-    - "443:443"
+    - "80:80"
 db:
   container_name: learninglocker-db
   image: tutum/mongodb:3.2
