@@ -1,9 +1,16 @@
 ### Learning Locker LRS Docker container
 
-This is a HTTPS **application-only** container for [Learning Locker](http://learninglocker.net).
+This is a docker container for [Learning Locker](http://learninglocker.net).
 As such, link to a running mongoDB container is required.
 
 This Learning Locker uses Mongo 3.2.
+
+#### Available tags
+
+- hongymagic/learninglocker:1.12.1-http
+- hongymagic/learninglocker:1.12.1, latest
+
+All Dockerfile are managed in [this GitHub repo](https://github.com/hongymagic/learninglocker).
 
 #### Example usage
 
@@ -27,7 +34,12 @@ Make sure to map `lrs.docker.dev` to your `docker-machine`. Then [visit the HTTP
 
 - `APP_URL`: FQDN of the final URL, if missing defaults to `TUTUM_SERVICE_FQDN` then `$HOSTNAME`
 - `APP_SECRET_KEY`: [Encryption key](http://docs.learninglocker.net/installation/#configuration) used by learning locker. Defaults to `CHANGEME12345678`
-- `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`: Self explanatory, see [configuration page](http://docs.learninglocker.net/installation/#configuration) for more details
+- `SMTP_SERVER`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `EMAIL_FROM_NAME`
+- `EMAIL_FROM_ADDRESS`
 
 ##### Optional
 
