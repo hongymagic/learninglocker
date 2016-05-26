@@ -53,6 +53,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	fi
 	echo "SSLCertificateKeyFile /var/www/certs/$APP_URL.key" >> /etc/apache2/apache2.conf
 	echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
+	echo "SSLCertificateChainFile /var/www/certs/$APP_URL.ca-bundle" >> /etc/apache2/apache2.conf
 	chmod 700 /var/www/certs
 	chmod 600 /var/www/certs/*
 
