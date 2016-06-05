@@ -28,34 +28,36 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	fi
 
 	# Create SSL certificate files, generate self-signed cert if necessary
-	mkdir -p /var/www/certs
-	if [ -z "$AWS_S3_BUCKET_PATH" ]; then
-		echo '==> AWS S3 Bucket not found. Generating self-signed SSL certificates.'
-		openssl \
-			req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-			-subj "/C=AU/ST=NSW/L=Sydney/O=Peopleplan Pty Ltd/CN=$APP_URL" \
-			-keyout "/var/www/certs/$APP_URL.key" \
-			-out "/var/www/certs/$APP_URL.crt"
-	else
-		echo "==> AWS S3 Bucket found. Downloading SSL certificate from AWS S3 bucket: $AWS_S3_BUCKET_PATH"
-		mkdir -p $HOME/.aws
-		cat > "$HOME/.aws/config" <<-EOF
-			[default]
-			aws_access_key_id = $AWS_S3_ACCESS_KEY_ID
-			aws_secret_access_key = $AWS_S3_SECRET_ACCESS_KEY
-			region = ap-southeast-2
-		EOF
+	if [ ! -d "/var/www/certs" ]; then
+		mkdir -p /var/www/certs
+		if [ -z "$AWS_S3_BUCKET_PATH" ]; then
+			echo '==> AWS S3 Bucket not found. Generating self-signed SSL certificates.'
+			openssl \
+				req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+				-subj "/C=AU/ST=NSW/L=Sydney/O=Peopleplan Pty Ltd/CN=$APP_URL" \
+				-keyout "/var/www/certs/$APP_URL.key" \
+				-out "/var/www/certs/$APP_URL.crt"
+		else
+			echo "==> AWS S3 Bucket found. Downloading SSL certificate from AWS S3 bucket: $AWS_S3_BUCKET_PATH"
+			mkdir -p $HOME/.aws
+			cat > "$HOME/.aws/config" <<-EOF
+				[default]
+				aws_access_key_id = $AWS_S3_ACCESS_KEY_ID
+				aws_secret_access_key = $AWS_S3_SECRET_ACCESS_KEY
+				region = ap-southeast-2
+			EOF
 
-		aws s3 sync "$AWS_S3_BUCKET_PATH" /var/www/certs/
-		for cert in /var/www/certs/*; do
-			mv "$cert" "/var/www/certs/$APP_URL.${cert##*.}"
-		done
+			aws s3 sync "$AWS_S3_BUCKET_PATH" /var/www/certs/
+			for cert in /var/www/certs/*; do
+				mv "$cert" "/var/www/certs/$APP_URL.${cert##*.}"
+			done
+		fi
+		echo "SSLCertificateKeyFile /var/www/certs/$APP_URL.key" >> /etc/apache2/apache2.conf
+		echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
+		echo "SSLCertificateChainFile /var/www/certs/$APP_URL.ca-bundle" >> /etc/apache2/apache2.conf
+		chmod 700 /var/www/certs
+		chmod 600 /var/www/certs/*
 	fi
-	echo "SSLCertificateKeyFile /var/www/certs/$APP_URL.key" >> /etc/apache2/apache2.conf
-	echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
-	echo "SSLCertificateChainFile /var/www/certs/$APP_URL.ca-bundle" >> /etc/apache2/apache2.conf
-	chmod 700 /var/www/certs
-	chmod 600 /var/www/certs/*
 
 	# Give MONGO some time to boot up
 	: ${MONGO_WAIT_TIMEOUT:=${MONGO_WAIT_TIMEOUT:-10}}
